@@ -1,26 +1,20 @@
-# HTWahl-O-Mat
-ist eine Wahlentscheidungshilfe für Studierende. Mit dem Wahl-O-Mat der HTW Berlin kannst du deine Positionen
-zu Hochschul-Themen mit denen der Kandidat:innen vergleichen.
 
-## Inhaltsverzeichnis
-- Installation
-- Technologien (BE)
+---
 
+# 2) README Backend (wahlomat-backend) 
 
-## Installation
+```md
+# HTWahl-O-Mat – Backend (Spring Boot)
 
-BE Setup:
-1. Backend Repository clonen:
-```bash 
-git clone https://gitlab.rz.htw-berlin.de/s0592471/wahlomat.backend.git
-```
+Das Backend stellt die REST-API für den **HTWahl-O-Mat** bereit (Auth, Kandidat:innen, Aussagen, Listen, Matching).
 
-2. Navigieren ins BE Verzeichnis:
-`cd wahlomat.backend`
+## Technologien
+- Java / Spring Boot
+- Spring Security (JWT)
+- Maven Wrapper (mvnw)
 
-Backend Anwendung starten (über Run-Button).
+## Installation & Start
 
-## Technologien (BE)
-- Spring Boot
-- PostgreSQL
-
+### 1) Repository klonen
+```bash
+git clone https://github.com/Moniii05/wahlomat-backend.git
