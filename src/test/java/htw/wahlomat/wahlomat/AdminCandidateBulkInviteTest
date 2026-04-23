@@ -1,0 +1,133 @@
+package htw.wahlomat.wahlomat;
+
+import htw.wahlomat.wahlomat.model.Role;
+import htw.wahlomat.wahlomat.model.User;
+import htw.wahlomat.wahlomat.model.admin.CandidateInvite;
+import htw.wahlomat.wahlomat.model.admin.InviteStatus;
+import htw.wahlomat.wahlomat.repository.CandidateAnswerRepository;
+import htw.wahlomat.wahlomat.repository.CandidateInviteRepository;
+import htw.wahlomat.wahlomat.repository.QuestionRepository;
+import htw.wahlomat.wahlomat.repository.UserRepository;
+import htw.wahlomat.wahlomat.repository.profilePage.CandidacyRepository;
+import htw.wahlomat.wahlomat.repository.profilePage.CandidateProfileRepository;
+import htw.wahlomat.wahlomat.service.AdminCandidateServiceImpl;
+import htw.wahlomat.wahlomat.dto.admin.BulkInviteResponse;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class AdminCandidateBulkInviteTest {
+
+    @Mock UserRepository userRepo;
+    @Mock CandidateInviteRepository inviteRepo;
+    @Mock CandidateProfileRepository profileRepo;
+    @Mock CandidacyRepository candidacyRepo;
+    @Mock CandidateAnswerRepository answerRepo;
+    @Mock QuestionRepository questionRepo;
+
+    AdminCandidateServiceImpl svc;
+
+    @BeforeEach
+    void setup() {
+        svc = new AdminCandidateServiceImpl(
+                userRepo, inviteRepo, profileRepo, candidacyRepo, answerRepo, questionRepo
+        );
+    }
+
+    @Test
+    void nullOrEmptySafe_returnsEmptyResponse() {
+        // null
+        BulkInviteResponse r1 = svc.bulkInvite(null);
+        assertEquals(0, r1.totalRequested());
+        assertEquals(0, r1.totalUnique());
+        assertTrue(r1.sent().isEmpty());
+        assertTrue(r1.skipped().isEmpty());
+        assertTrue(r1.failed().isEmpty());
+
+        // empty
+        BulkInviteResponse r2 = svc.bulkInvite(List.of());
+        assertEquals(0, r2.totalRequested());
+        assertEquals(0, r2.totalUnique());
+    }
+
+    @Test
+    void invalidDomain_goesToFailed() {
+        BulkInviteResponse res = svc.bulkInvite(List.of(
+                "bob@gmail.com", "invalid@@htw-berlin.de", "charlie@student.htw-berlin" // alle ungültig
+        ));
+        assertEquals(3, res.failed().size());
+        assertTrue(res.failed().stream().allMatch(x -> "invalid_email".equals(x.reason())));
+        verifyNoInteractions(userRepo, inviteRepo);
+    }
+
+    @Test
+    void duplicateCaseInsensitive_countedOnce() {
+        BulkInviteResponse res = svc.bulkInvite(List.of(
+                "AdaLovELace@student.htw-berlin.de", "adalovelace@student.htw-berlin.de"
+        ));
+        // totalRequested = 2, totalUnique = 1
+        assertEquals(2, res.totalRequested());
+        assertEquals(1, res.totalUnique());
+    }
+
+    @Test
+    void alreadyRegistered_goesToSkipped() {
+        User u = new User();
+        u.setRole(Role.CANDIDATE);
+        when(userRepo.findByEmail("anna@student.htw-berlin.de")).thenReturn(Optional.of(u));
+
+        BulkInviteResponse res = svc.bulkInvite(List.of("Anna@student.htw-berlin.de"));
+        assertEquals(1, res.skipped().size());
+        assertEquals("already_registered", res.skipped().get(0).reason());
+        verify(inviteRepo, never()).save(any());
+    }
+
+    @Test
+    void activeInvite_exists_goesToSkipped() {
+        CandidateInvite inv = new CandidateInvite("bob@student.htw-berlin.de");
+        inv.setStatus(InviteStatus.INVITED);
+        inv.setInvitedAt(Instant.now()); // aktiv / nicht abgelaufen
+        when(inviteRepo.findByEmail("bob@student.htw-berlin.de")).thenReturn(Optional.of(inv));
+
+        BulkInviteResponse res = svc.bulkInvite(List.of("bob@student.htw-berlin.de"));
+        assertEquals(1, res.skipped().size());
+        assertEquals("already_invited_active", res.skipped().get(0).reason());
+        verify(inviteRepo, never()).save(any(CandidateInvite.class));
+    }
+
+    @Test
+    void expiredInvite_renews_andGoesToSent() {
+        CandidateInvite inv = new CandidateInvite("dora@student.htw-berlin.de");
+        inv.setStatus(InviteStatus.INVITED);
+        // 100 Tage alt ⇒ abgelaufen (TTL=90)
+        inv.setInvitedAt(Instant.now().minusSeconds(100L * 24 * 3600));
+        when(inviteRepo.findByEmail("dora@student.htw-berlin.de")).thenReturn(Optional.of(inv));
+
+        BulkInviteResponse res = svc.bulkInvite(List.of("dora@student.htw-berlin.de"));
+
+        assertEquals(1, res.sent().size());
+        // Save einmal aufgerufen (erneuert)
+        verify(inviteRepo, times(1)).save(any(CandidateInvite.class));
+    }
+
+    @Test
+    void freshInvite_created_whenNoExisting() {
+        when(inviteRepo.findByEmail("gracehopper@student.htw-berlin.de")).thenReturn(Optional.empty());
+
+        BulkInviteResponse res = svc.bulkInvite(List.of("gracehopper@student.htw-berlin.de"));
+
+        assertEquals(1, res.sent().size());
+        verify(inviteRepo, times(1)).save(any(CandidateInvite.class));
+    }
+}

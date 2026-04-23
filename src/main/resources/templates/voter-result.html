@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wahlergebnis</title>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 2rem;
+      color: #222;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: #004c3f;
+    }
+
+    .header p {
+      margin: 0.5rem 0 0;
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    .meta {
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      background: #f7faf7;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-item dt {
+      font-weight: 600;
+      margin: 0;
+      color: #004c3f;
+    }
+
+    .meta-item dd {
+      margin: 0.15rem 0 0;
+    }
+
+    .candidate-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      background: #ffffff;
+    }
+
+    .candidate-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .candidate-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .list-name {
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .match-badge {
+      background: #008f63;
+      color: #ffffff;
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .about {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      white-space: pre-line; 
+    }
+
+    .no-results {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Dein Wahlergebnis</h1>
+    <p>Übersicht der Kandidierenden, die am besten zu deinen Antworten im Wahl-O-Mat der HTW Berlin passen.</p>
+  </div>
+
+  <!-- (FB, Gremium, Datum) -->
+  <div class="meta">
+    <div class="meta-row">
+      <div class="meta-item">
+        <dt>Fachbereich</dt>
+        <dd th:if="${facultyLabel != null}" th:text="${facultyLabel}"></dd>
+        <dd th:if="${facultyLabel == null}">Unbekannter Fachbereich</dd>
+      </div>
+      <div class="meta-item">
+        <dt>Gremium</dt>
+        <dd th:if="${committeeLabel != null}" th:text="${committeeLabel}"></dd>
+        <dd th:if="${committeeLabel == null}">Unbekanntes Gremium</dd>
+      </div>
+      <div class="meta-item">
+        <dt>Generiert am</dt>
+        <dd th:if="${generatedAt != null}" th:text="${generatedAt}"></dd>
+        <dd th:if="${generatedAt == null}">Zeitpunkt unbekannt</dd>
+      </div>
+    </div>
+  </div>
+
+  <!-- wenn keine ergebnisse -->
+  <div class="no-results" th:if="${#lists.isEmpty(results)}">
+    Für deine Auswahl liegen derzeit keine Kandidierenden vor.
+  </div>
+
+  <!-- kandidatenliste -->
+  <div th:each="candidate, iterStat : ${results}">
+    <div class="candidate-card">
+      <div class="candidate-header">
+        <div>
+          <div class="candidate-name"
+               th:text="|${iterStat.index + 1}. ${candidate.firstName} ${candidate.lastName}|">
+          </div>
+
+          <!-- Liste -->
+          <div class="list-name">
+            <span th:if="${candidate.listNumber != null}">
+              Liste <span th:text="${candidate.listNumber}">3</span>
+            </span>
+            <span th:if="${candidate.listName != null}">
+              &nbsp;–&nbsp;<span th:text="${candidate.listName}">Campusliste</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Prozente -->
+        <div class="match-badge">
+          <span th:text="${#numbers.formatDecimal(candidate.matchingPercentage, 1, 0)} + ' %'">
+          </span>
+        </div>
+      </div>
+
+      <!-- Über mich -->
+      <div class="about">
+        <strong>Über mich</strong><br />
+        <span th:text="${candidate.aboutMe != null ? candidate.aboutMe : 'Kein Über-mich-Text hinterlegt.'}">
+        </span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
