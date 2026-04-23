@@ -1,20 +1,24 @@
+# HTWahl-O-Mat - Backend
 
----
+Spring-Boot-Backend für den HTWahl-O-Mat.  
+Stellt REST-Endpunkte für Authentifizierung (JWT), Rollen (Admin/Kandidat:in) und die Wahl-/Matching-Funktionen bereit.
 
-# 2) README Backend (wahlomat-backend) 
-
-```md
-# HTWahl-O-Mat – Backend (Spring Boot)
-
-Das Backend stellt die REST-API für den **HTWahl-O-Mat** bereit (Auth, Kandidat:innen, Aussagen, Listen, Matching).
-
-## Technologien
-- Java / Spring Boot
-- Spring Security (JWT)
+## Tech
+- Spring Boot 3.5.6
+- Java 21
+- PostgreSQL
 - Maven Wrapper (mvnw)
 
-## Installation & Start
+## Voraussetzungen
+- Java 21
+- PostgreSQL-Datenbank
 
-### 1) Repository klonen
+## Konfiguration (lokal)
+Setze vor dem Start die folgenden Umgebungsvariablen. Ersetze die Platzhalter durch deine eigenen Werte:
+
+macOS/Linux:
 ```bash
-git clone https://github.com/Moniii05/wahlomat-backend.git
+export DB_URL="jdbc:postgresql://localhost:5432/<DBNAME>"
+export DB_USERNAME="<USER>"
+export DB_PASSWORD="<PASSWORD>"
+export ADMIN_PASSWORD="<ADMIN_PASSWORD>"
