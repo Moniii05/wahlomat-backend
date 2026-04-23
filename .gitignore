@@ -61,3 +61,5 @@ spring.log
 *.temp
 *.swp
 *~backend.w.code-workspace
+backend.w.code-workspace
+docs/javadoc/
